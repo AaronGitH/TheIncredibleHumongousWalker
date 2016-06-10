@@ -25,7 +25,7 @@ class Leg{
 		return knee.read();
 	}
 	
-	WaitObj lift(int hip_angle, int knee_angle){
+	void lift(int hip_angle, int knee_angle){
 		hip.wirte(hip_angle);
 		knee.write(knee_angle);
 	}

@@ -23,7 +23,7 @@ class Robot{
 		} 
 	}
 	
-	WaitObj moveTo(int direction){
+	void moveTo(int direction){
 		switch(){
 			case 1:
 		}
