@@ -1,3 +1,4 @@
+#include <OLLO.h> 
 /* Serial device defines for dxl bus */
 #define DXL_BUS_SERIAL1 1  //Dynamixel on Serial1(USART1)  <-OpenCM9.04
 #define DXL_BUS_SERIAL2 2  //Dynamixel on Serial2(USART2)  <-LN101,BT210
@@ -6,6 +7,12 @@
 #define MOVING_SPEED 32
 #define TORQUE_LIMIT 34
 #define GOAL_POSITION 30
+
+OLLO myOLLO;
+#define IR_FRONT 3
+
+
+int front_signal;
 
 int last_robot_direction = 0;
 boolean start_button_pushed = false;
@@ -18,16 +25,18 @@ void setup() {
   
   Dxl.begin(3); // Dynamixel 2.0 Baudrate -> 0: 9600, 1: 57600, 2: 115200, 3: 1Mbps 
   
-  for(int motor_id = 1; motor_id <= 8; motor_id++){
+  for(int motor_id = 1; motor_id <= 9; motor_id++){
     if(motor_id % 2 != 0){ // outer motors (knee)
       Dxl.writeWord(motor_id, MOVING_SPEED, 95);  //Dynamixel ID 1 Speed Control (Address_data : 0~1024)
     }
-    else{ // inner motors (hip)
+    else{ // inner motors (hip) + sensor
       Dxl.writeWord(motor_id, MOVING_SPEED, 110);
     }
     Dxl.writeWord(motor_id, TORQUE_LIMIT, 1023);
     Dxl.jointMode(motor_id); //jointMode() is to use position mode
   }
+  
+  myOLLO.begin(IR_FRONT);//DMS Module must be connected at port 3.
 }
 
 void moveMotor(int motor_id, int delta_degree){
@@ -135,13 +144,19 @@ void loop(){
   int forward = 0, backward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
   
   
-  // TODO: what do you do Johnnie - tell me !!
-    switch(received_char){
-      case 's': robot_direction = forward; break;
-      case 'a': robot_direction = left; break;
-      case 'w': robot_direction = backward; break;
-      case 'd': robot_direction = right; break;
-    }
+  //moveMotor(9, 0);
+  // moveMotor(9, last_robot_direction * 90); // sensor
+  int threshold = 2000;
+  
+  SerialUSB.println(myOLLO.read(2)); //read ADC value from OLLO port 1*/ // WHY ????
+  front_signal = myOLLO.read(IR_FRONT);
+  
+  if(front_signal > threshold){
+    robot_direction = right;
+  }
+  else{
+    robot_direction = backward;
+  }
   
   moveRobot(robot_direction); // only call once in the main loop
   
