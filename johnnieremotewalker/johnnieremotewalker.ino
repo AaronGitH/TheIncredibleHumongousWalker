@@ -9,7 +9,7 @@
 
 int last_robot_direction = 0;
 boolean start_button_pushed = false;
-//boolean get_rid_of_time_based_delay_stuff_pirate_arrrr[8] = {false, false, ..}; // TODO
+//boolean get_rid_of_time_based_delay_stuff_pirate_arrrr[8] = {false, false, ..};
 
 Dynamixel Dxl(DXL_BUS_SERIAL3);
 
@@ -20,16 +20,16 @@ void setup() {
   
   for(int motor_id = 1; motor_id <= 8; motor_id++){
     if(motor_id % 2 != 0){ // outer motors (knee)
-      Dxl.writeWord(motor_id, MOVING_SPEED, 95);  //Dynamixel ID 1 Speed Control (Address_data : 0~1024)
+      Dxl.writeWord(motor_id, MOVING_SPEED, 95);  // Dynamixel ID 1 Speed Control (Address_data : 0~1024)
     }
     else{ // inner motors (hip)
       Dxl.writeWord(motor_id, MOVING_SPEED, 110);
     }
     Dxl.writeWord(motor_id, TORQUE_LIMIT, 1023);
-    Dxl.jointMode(motor_id); //jointMode() is to use position mode
+    Dxl.jointMode(motor_id); // jointMode() is to use position mode
   }
   
-  Serial2.begin(57600); //Serial2 Serial initialize
+  Serial2.begin(57600); // Serial2 Serial initialize
 }
 
 void moveMotor(int motor_id, int delta_degree){
@@ -106,10 +106,11 @@ void walking_routine(int routine_id, int robot_direction){
 void moveRobot(int robot_direction){
   int front = 1, up = 2, back = 3, down = 4, neutral = 0; // walking_routine_id
  
-  int time = 760; // ms // <-- TODO delete time and ALL corosponding delays - logic based code refactoring 
+  int time = 760; // ms
+  // future consideration: delete time and ALL corresponding delays - logic based code refactoring
   
-  int button_state = digitalRead(BOARD_BUTTON_PIN); // read the state of the pushbutton value
-  if(button_state == HIGH){ //if button is pushed, means 3.3V(HIGH) is connected to BOARD_BUTTON_PIN
+  int button_state = digitalRead(BOARD_BUTTON_PIN); // read the state of the push button value
+  if(button_state == HIGH){ // if button is pushed, means 3.3V(HIGH) is connected to BOARD_BUTTON_PIN
     start_button_pushed = true;
   }
 
@@ -123,7 +124,7 @@ void moveRobot(int robot_direction){
     walking_routine(up, robot_direction);
     delay(time/1.5);
   }
-  else{ // swtich to neutral after direction change
+  else{ // switch to neutral after direction change
     walking_routine(neutral, robot_direction);
     delay(time);
   }
@@ -134,15 +135,15 @@ void loop(){
   //Enum track_part {START, MIDDLE, FINISH}; // TODO AI
   
   int robot_direction = last_robot_direction;
-  int forward = 0, backward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
+  int backward = 0, forward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
   
   if(Serial2.available()){ // when you typed any character in terminal
     start_button_pushed = true;
     char received_char = (char)Serial2.read();
     switch(received_char){
-      case 's': robot_direction = forward; break;
+      case 'w': robot_direction = forward; break;
       case 'a': robot_direction = left; break;
-      case 'w': robot_direction = backward; break;
+      case 's': robot_direction = backward; break;
       case 'd': robot_direction = right; break;
     }
   }

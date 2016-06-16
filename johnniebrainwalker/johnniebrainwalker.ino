@@ -7,7 +7,7 @@
 #define MOVING_SPEED 32
 #define TORQUE_LIMIT 34
 #define GOAL_POSITION 30
-
+/* IR Sensors */
 OLLO myOLLO;
 #define IR_FRONT 3
 #define IR_LEFT 4
@@ -16,24 +16,24 @@ OLLO myOLLO;
 
 int last_robot_direction = 0;
 boolean start_button_pushed = false;
-//boolean get_rid_of_time_based_delay_stuff_pirate_arrrr[8] = {false, false, ..}; // TODO
+//boolean get_rid_of_time_based_delay_stuff_pirate_arrrr[8] = {false, false, ..};
 
 Dynamixel Dxl(DXL_BUS_SERIAL3);
 
-void setup() {  
+void setup() {
   pinMode(BOARD_BUTTON_PIN, INPUT_PULLDOWN);
   
   Dxl.begin(3); // Dynamixel 2.0 Baudrate -> 0: 9600, 1: 57600, 2: 115200, 3: 1Mbps 
   
-  for(int motor_id = 1; motor_id <= 9; motor_id++){
+  for(int motor_id = 1; motor_id <= 8; motor_id++){
     if(motor_id % 2 != 0){ // outer motors (knee)
-      Dxl.writeWord(motor_id, MOVING_SPEED, 95);  //Dynamixel ID 1 Speed Control (Address_data : 0~1024)
+      Dxl.writeWord(motor_id, MOVING_SPEED, 95);  // Dynamixel ID 1 Speed Control (Address_data : 0~1024)
     }
-    else{ // inner motors (hip + sensor)
+    else{ // inner motors (hip)
       Dxl.writeWord(motor_id, MOVING_SPEED, 110);
     }
     Dxl.writeWord(motor_id, TORQUE_LIMIT, 1023);
-    Dxl.jointMode(motor_id); //jointMode() is to use position mode
+    Dxl.jointMode(motor_id); // jointMode() is to use position mode
   }
   
   myOLLO.begin(IR_FRONT, IR_SENSOR);
@@ -115,10 +115,11 @@ void walking_routine(int routine_id, int robot_direction){
 void moveRobot(int robot_direction){
   int front = 1, up = 2, back = 3, down = 4, neutral = 0; // walking_routine_id
  
-  int time = 760; // ms // <-- TODO delete time and ALL corosponding delays - logic based code refactoring 
+  int time = 760; // ms 
+  // future consideration: delete time and ALL corresponding delays - logic based code refactoring 
   
-  int button_state = digitalRead(BOARD_BUTTON_PIN); // read the state of the pushbutton value
-  if(button_state == HIGH){ //if button is pushed, means 3.3V(HIGH) is connected to BOARD_BUTTON_PIN
+  int button_state = digitalRead(BOARD_BUTTON_PIN); // read the state of the push button value
+  if(button_state == HIGH){ // if button is pushed, means 3.3V(HIGH) is connected to BOARD_BUTTON_PIN
     start_button_pushed = true;
   }
   
@@ -132,7 +133,7 @@ void moveRobot(int robot_direction){
     walking_routine(up, robot_direction);
     delay(time/1.5);
   }
-  else{ // swtich to neutral after direction change
+  else{ // switch to neutral after direction change
     walking_routine(neutral, robot_direction);
     delay(time);
   }
@@ -140,23 +141,22 @@ void moveRobot(int robot_direction){
 }
 
 void loop(){
-  //Enum track_part {START, MIDDLE, FINISH}; // TODO AI
+  //Enum track_part {START, MIDDLE, FINISH};
   
   int robot_direction = last_robot_direction;
-  int backward = 0, forward = 2, right = 1, left = 3; // robot_direction
-  
-  
-  int lower_distance_threshold = 1000; // shorter range means higher value !
-  int higher_distance_threshold = 700;
-  
-  int right_signal_threshold = 105;
-  int left_signal_threshold = 125;
+  int backward = 0, forward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
   
   int front_IR_signal = myOLLO.read(IR_FRONT);
   int right_IR_signal = myOLLO.read(IR_RIGHT);
   int left_IR_signal = myOLLO.read(IR_LEFT);
   
-  // follow the track
+  int lower_distance_threshold = 1000; // shorter range means higher value
+  int higher_distance_threshold = 700;
+  
+  int right_signal_threshold = 105;
+  int left_signal_threshold = 125;
+  
+  /* follow the track */
   if(front_IR_signal < higher_distance_threshold){
     robot_direction = forward;
   }
@@ -165,7 +165,7 @@ void loop(){
     robot_direction = right;
   }
   
-  // obstacle avoidance
+  /* obstacle avoidance */
   if(left_IR_signal > left_signal_threshold){
     robot_direction = right;
   }
@@ -173,9 +173,6 @@ void loop(){
   if(right_IR_signal > right_signal_threshold){
     robot_direction = left;
   }
-  
-  
-  
   
   
   moveRobot(robot_direction); // only call once in the main loop
