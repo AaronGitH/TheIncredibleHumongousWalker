@@ -10,9 +10,9 @@
 
 OLLO myOLLO;
 #define IR_FRONT 3
+#define IR_LEFT 4
+#define IR_RIGHT 1
 
-
-int front_signal;
 
 int last_robot_direction = 0;
 boolean start_button_pushed = false;
@@ -29,14 +29,16 @@ void setup() {
     if(motor_id % 2 != 0){ // outer motors (knee)
       Dxl.writeWord(motor_id, MOVING_SPEED, 95);  //Dynamixel ID 1 Speed Control (Address_data : 0~1024)
     }
-    else{ // inner motors (hip) + sensor
+    else{ // inner motors (hip + sensor)
       Dxl.writeWord(motor_id, MOVING_SPEED, 110);
     }
     Dxl.writeWord(motor_id, TORQUE_LIMIT, 1023);
     Dxl.jointMode(motor_id); //jointMode() is to use position mode
   }
   
-  myOLLO.begin(IR_FRONT);//DMS Module must be connected at port 3.
+  myOLLO.begin(IR_FRONT, IR_SENSOR);
+  myOLLO.begin(IR_LEFT, IR_SENSOR);
+  myOLLO.begin(IR_RIGHT, IR_SENSOR);
 }
 
 void moveMotor(int motor_id, int delta_degree){
@@ -119,7 +121,7 @@ void moveRobot(int robot_direction){
   if(button_state == HIGH){ //if button is pushed, means 3.3V(HIGH) is connected to BOARD_BUTTON_PIN
     start_button_pushed = true;
   }
-
+  
   if(start_button_pushed && robot_direction == last_robot_direction){
     walking_routine(back, robot_direction);
     delay(time);
@@ -135,28 +137,46 @@ void moveRobot(int robot_direction){
     delay(time);
   }
   last_robot_direction = robot_direction; // needs to be assigned as the last operation for the next main loop
-} 
+}
 
 void loop(){
   //Enum track_part {START, MIDDLE, FINISH}; // TODO AI
   
   int robot_direction = last_robot_direction;
-  int forward = 0, backward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
+  int backward = 0, forward = 2, right = 1, left = 3; // robot_direction
   
   
-  //moveMotor(9, 0);
-  // moveMotor(9, last_robot_direction * 90); // sensor
-  int threshold = 2000;
+  int lower_distance_threshold = 1000; // shorter range means higher value !
+  int higher_distance_threshold = 700;
   
-  SerialUSB.println(myOLLO.read(2)); //read ADC value from OLLO port 1*/ // WHY ????
-  front_signal = myOLLO.read(IR_FRONT);
+  int right_signal_threshold = 105;
+  int left_signal_threshold = 125;
   
-  if(front_signal > threshold){
+  int front_IR_signal = myOLLO.read(IR_FRONT);
+  int right_IR_signal = myOLLO.read(IR_RIGHT);
+  int left_IR_signal = myOLLO.read(IR_LEFT);
+  
+  // follow the track
+  if(front_IR_signal < higher_distance_threshold){
+    robot_direction = forward;
+  }
+  
+  if(front_IR_signal > lower_distance_threshold){
     robot_direction = right;
   }
-  else{
-    robot_direction = backward;
+  
+  // obstacle avoidance
+  if(left_IR_signal > left_signal_threshold){
+    robot_direction = right;
   }
+  
+  if(right_IR_signal > right_signal_threshold){
+    robot_direction = left;
+  }
+  
+  
+  
+  
   
   moveRobot(robot_direction); // only call once in the main loop
   
