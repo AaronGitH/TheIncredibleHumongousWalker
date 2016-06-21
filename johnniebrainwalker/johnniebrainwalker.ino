@@ -150,11 +150,13 @@ void loop(){
   int right_IR_signal = myOLLO.read(IR_RIGHT);
   int left_IR_signal = myOLLO.read(IR_LEFT);
   
-  int lower_distance_threshold = 1000; // shorter range means higher value
+  float range_scale = 0.8; // different values are used for performance test runs
+  
+  int lower_distance_threshold = (int)(1000 * range_scale); // shorter range means higher value
   int higher_distance_threshold = 700;
   
-  int right_signal_threshold = 105;
-  int left_signal_threshold = 125;
+  int right_signal_threshold = (int)(105 * range_scale);
+  int left_signal_threshold = (int)(125 * range_scale);
   
   /* follow the track */
   if(front_IR_signal < higher_distance_threshold){
