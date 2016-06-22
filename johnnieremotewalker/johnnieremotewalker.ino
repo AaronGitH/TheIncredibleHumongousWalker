@@ -133,7 +133,7 @@ void moveRobot(int robot_direction){
 
 void loop(){
   //Enum track_part {START, MIDDLE, FINISH}; // TODO AI
-  
+  // Remote control part
   int robot_direction = last_robot_direction;
   int backward = 0, forward = 2, right = 1, left = 3; // robot_direction (equal to leg index)
   
